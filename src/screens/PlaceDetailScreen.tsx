@@ -78,7 +78,6 @@ export default function PlaceDetailScreen({ route }: any) {
   const { colors, isDarkMode } = useContext(ThemeContext);
   const { place } = route.params;
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [calendarPermission, setCalendarPermission] = useState(false);
 
   // Charger la date sauvegardée pour ce lieu
   useEffect(() => {
@@ -90,26 +89,15 @@ export default function PlaceDetailScreen({ route }: any) {
     });
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await ExpoCalendar.requestCalendarPermissionsAsync();
-      setCalendarPermission(status === "granted");
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission requise",
-          "L'accès au calendrier est nécessaire pour planifier vos visites.",
-        );
-      }
-    })();
-  }, []);
-
   const onDayPress = async (day: any) => {
     setSelectedDate(day.dateString);
 
-    if (!calendarPermission) {
+    // Demander la permission au moment du clic
+    const { status } = await ExpoCalendar.requestCalendarPermissionsAsync();
+    if (status !== "granted") {
       Alert.alert(
-        "Permission refusée",
-        "Impossible d'ajouter au calendrier sans permission.",
+        "Permission requise",
+        "L'accès au calendrier est nécessaire pour planifier vos visites. Allez dans Paramètres > Applications > Expo Go > Permissions pour l'activer.",
       );
       return;
     }
