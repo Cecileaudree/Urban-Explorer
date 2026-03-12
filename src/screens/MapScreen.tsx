@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
-import MapView, { Marker, Callout } from "react-native-maps";
 import { fetchPlaces, Place } from "../services/api";
+import NativeMap from "../components/NativeMap";
 
 const PARIS_REGION = {
   latitude: 48.8566,
@@ -32,25 +32,13 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} initialRegion={PARIS_REGION}>
-        {places.map((place) => (
-          <Marker
-            key={place.id}
-            coordinate={{ latitude: place.lat, longitude: place.lon }}
-            title={place.title}
-            description={place.address}
-          />
-        ))}
-      </MapView>
+      <NativeMap places={places} region={PARIS_REGION} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  map: {
     flex: 1,
   },
   center: {
