@@ -6,6 +6,7 @@ import {
   FlatList,
   ActivityIndicator,
   TextInput,
+  RefreshControl,
 } from "react-native";
 import { fetchPlaces, Place } from "../services/api";
 import LieuCard from "../components/LieuCard";
@@ -14,18 +15,59 @@ import { ThemeContext } from "../context/ThemeContext";
 
 export default function DiscoverScreen({ navigation }: any) {
   const { colors } = useContext(ThemeContext);
+  const [page, setPage] = useState(0);
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [hasMore, setHasMore] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadPlaces = async (pageNumber = 0) => {
+    try {
+      const newPlaces = await fetchPlaces(pageNumber * 30);
+
+      if (newPlaces.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      if (pageNumber === 0) {
+        setPlaces(newPlaces);
+      } else {
+        setPlaces((prev) => [...prev, ...newPlaces]);
+      }
+    } catch {
+      setError("Impossible de charger les lieux.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
-    fetchPlaces()
-      .then(setPlaces)
-      .catch(() => setError("Impossible de charger les lieux."))
-      .finally(() => setLoading(false));
+    loadPlaces(0);
   }, []);
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setSearch("");
+    setPage(0);
+    await loadPlaces(0);
+    setRefreshing(false);
+  };
+
+  const loadMore = () => {
+    if (loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+
+    const nextPage = page + 1;
+    setPage(nextPage);
+
+    loadPlaces(nextPage);
+  };
   const filtered = places.filter((p) =>
     p.title.toLowerCase().includes(search.toLowerCase()),
   );
@@ -77,6 +119,15 @@ export default function DiscoverScreen({ navigation }: any) {
               }
             />
           )}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator size="small" color="#2563eb" />
+            ) : null
+          }
           ListEmptyComponent={
             <Text style={[styles.empty, { color: colors.text }]}>
               Aucun lieu trouvé.
@@ -90,6 +141,7 @@ export default function DiscoverScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     padding: 15,
     backgroundColor: "#f4f6f8",
   },
