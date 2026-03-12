@@ -2,6 +2,7 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
 
 import DiscoverScreen from "./src/screens/DiscoverScreen";
 import PlaceDetailScreen from "./src/screens/PlaceDetailScreen";
@@ -16,8 +17,16 @@ const Stack = createNativeStackNavigator<DiscoverStackParamList>();
 function DiscoverStackNavigator() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Discover" component={DiscoverScreen} />
-      <Stack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
+      <Stack.Screen
+        name="Discover"
+        component={DiscoverScreen}
+        options={{ title: "Découverte" }}
+      />
+      <Stack.Screen
+        name="PlaceDetail"
+        component={PlaceDetailScreen}
+        options={{ title: "Détails du lieu" }}
+      />
     </Stack.Navigator>
   );
 }
@@ -25,7 +34,20 @@ function DiscoverStackNavigator() {
 export default function App() {
   return (
     <NavigationContainer>
-      <Tab.Navigator>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName: keyof typeof Ionicons.glyphMap = "ellipse";
+            if (route.name === "Découverte") iconName = focused ? "compass" : "compass-outline";
+            else if (route.name === "Carte") iconName = focused ? "map" : "map-outline";
+            else if (route.name === "Profil") iconName = focused ? "person" : "person-outline";
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: "#2563eb",
+          tabBarInactiveTintColor: "gray",
+          headerShown: false,
+        })}
+      >
         <Tab.Screen name="Découverte" component={DiscoverStackNavigator} />
         <Tab.Screen name="Carte" component={MapScreen} />
         <Tab.Screen name="Profil" component={ProfileScreen} />
