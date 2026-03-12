@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Image, ScrollView, Alert } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import * as ExpoCalendar from "expo-calendar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const VISITS_KEY = "@urban_explorer_planned_visits";
 
 LocaleConfig.locales["fr"] = {
   monthNames: ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"],
@@ -36,6 +39,16 @@ export default function PlaceDetailScreen({ route }: any) {
   const { place } = route.params;
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [calendarPermission, setCalendarPermission] = useState(false);
+
+  // Charger la date sauvegardée pour ce lieu
+  useEffect(() => {
+    AsyncStorage.getItem(VISITS_KEY).then((data) => {
+      if (data) {
+        const visits = JSON.parse(data);
+        if (visits[place.id]) setSelectedDate(visits[place.id]);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -75,6 +88,12 @@ export default function PlaceDetailScreen({ route }: any) {
         endDate,
         notes: `Visite planifiée via Urban Explorer`,
       });
+
+      // Sauvegarder la date en local
+      const stored = await AsyncStorage.getItem(VISITS_KEY);
+      const visits = stored ? JSON.parse(stored) : {};
+      visits[place.id] = day.dateString;
+      await AsyncStorage.setItem(VISITS_KEY, JSON.stringify(visits));
 
       Alert.alert(
         "Visite planifiée ✅",

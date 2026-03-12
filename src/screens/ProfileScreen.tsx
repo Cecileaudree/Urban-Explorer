@@ -1,9 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const PHOTO_KEY = "@urban_explorer_profile_photo";
 
 export default function ProfileScreen() {
   const [photo, setPhoto] = useState<string | null>(null);
+
+  // Charger la photo sauvegardée au démarrage
+  useEffect(() => {
+    AsyncStorage.getItem(PHOTO_KEY).then((saved) => {
+      if (saved) setPhoto(saved);
+    });
+  }, []);
+
+  // Sauvegarder la photo à chaque changement
+  const savePhoto = async (uri: string) => {
+    setPhoto(uri);
+    await AsyncStorage.setItem(PHOTO_KEY, uri);
+  };
 
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -19,7 +35,7 @@ export default function ProfileScreen() {
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      setPhoto(result.assets[0].uri);
+      await savePhoto(result.assets[0].uri);
     }
   };
 
@@ -37,7 +53,7 @@ export default function ProfileScreen() {
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      setPhoto(result.assets[0].uri);
+      await savePhoto(result.assets[0].uri);
     }
   };
 
