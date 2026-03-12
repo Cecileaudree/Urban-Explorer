@@ -92,48 +92,49 @@ export default function PlaceDetailScreen({ route }: any) {
   const onDayPress = async (day: any) => {
     setSelectedDate(day.dateString);
 
-    // Demander la permission au moment du clic
-    const { status } = await ExpoCalendar.requestCalendarPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission requise",
-        "L'accès au calendrier est nécessaire pour planifier vos visites. Allez dans Paramètres > Applications > Expo Go > Permissions pour l'activer.",
-      );
-      return;
-    }
-
+    // Sauvegarder la date en local dans tous les cas
     try {
-      const calendarId = await getOrCreateCalendarId();
-      if (!calendarId) {
-        Alert.alert("Erreur", "Aucun calendrier disponible sur cet appareil.");
-        return;
-      }
-
-      const startDate = new Date(day.dateString + "T10:00:00");
-      const endDate = new Date(day.dateString + "T18:00:00");
-
-      await ExpoCalendar.createEventAsync(calendarId, {
-        title: `Visite : ${place.title}`,
-        location: place.address,
-        startDate,
-        endDate,
-        notes: `Visite planifiée via Urban Explorer`,
-      });
-
-      // Sauvegarder la date en local
       const stored = await AsyncStorage.getItem(VISITS_KEY);
       const visits = stored ? JSON.parse(stored) : {};
       visits[place.id] = day.dateString;
       await AsyncStorage.setItem(VISITS_KEY, JSON.stringify(visits));
-
-      Alert.alert(
-        "Visite planifiée ✅",
-        `Visite au "${place.title}" ajoutée à votre calendrier le ${day.dateString}`,
-      );
-    } catch (error) {
-      console.log("Erreur calendrier :", error);
-      Alert.alert("Erreur", "Impossible d'ajouter l'événement au calendrier.");
+    } catch (e) {
+      console.log("Erreur sauvegarde locale :", e);
     }
+
+    // Tenter d'ajouter au calendrier natif
+    try {
+      const { status } = await ExpoCalendar.requestCalendarPermissionsAsync();
+      if (status === "granted") {
+        const calendarId = await getOrCreateCalendarId();
+        if (calendarId) {
+          const startDate = new Date(day.dateString + "T10:00:00");
+          const endDate = new Date(day.dateString + "T18:00:00");
+
+          await ExpoCalendar.createEventAsync(calendarId, {
+            title: `Visite : ${place.title}`,
+            location: place.address,
+            startDate,
+            endDate,
+            notes: `Visite planifiée via Urban Explorer`,
+          });
+
+          Alert.alert(
+            "Visite planifiée ✅",
+            `Visite au "${place.title}" ajoutée à votre calendrier le ${day.dateString}`,
+          );
+          return;
+        }
+      }
+    } catch (error) {
+      console.log("Calendrier natif non disponible :", error);
+    }
+
+    // Fallback : confirmation sans calendrier natif
+    Alert.alert(
+      "Visite planifiée ✅",
+      `Visite au "${place.title}" planifiée le ${day.dateString}`,
+    );
   };
 
   return (
