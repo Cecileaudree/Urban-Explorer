@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { fetchPlaces, Place } from "../services/api";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemeContext } from "../context/ThemeContext";
 import NativeMap from "../components/NativeMap";
 
 const PARIS_REGION = {
@@ -11,6 +13,8 @@ const PARIS_REGION = {
 };
 
 export default function MapScreen() {
+  const { colors } = useContext(ThemeContext);
+
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,9 +27,11 @@ export default function MapScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={{ marginTop: 10 }}>Chargement de la carte...</Text>
+        <Text style={{ marginTop: 10, color: colors.text }}>
+          Chargement de la carte...
+        </Text>
       </View>
     );
   }
