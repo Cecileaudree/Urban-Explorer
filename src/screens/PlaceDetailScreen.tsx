@@ -1,22 +1,61 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { View, Text, StyleSheet, Image, ScrollView, Alert } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemeContext } from "../context/ThemeContext";
 import * as ExpoCalendar from "expo-calendar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const VISITS_KEY = "@urban_explorer_planned_visits";
 
 LocaleConfig.locales["fr"] = {
-  monthNames: ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"],
-  monthNamesShort: ["Janv.","Févr.","Mars","Avr.","Mai","Juin","Juil.","Août","Sept.","Oct.","Nov.","Déc."],
-  dayNames: ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"],
-  dayNamesShort: ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"],
+  monthNames: [
+    "Janvier",
+    "Février",
+    "Mars",
+    "Avril",
+    "Mai",
+    "Juin",
+    "Juillet",
+    "Août",
+    "Septembre",
+    "Octobre",
+    "Novembre",
+    "Décembre",
+  ],
+  monthNamesShort: [
+    "Janv.",
+    "Févr.",
+    "Mars",
+    "Avr.",
+    "Mai",
+    "Juin",
+    "Juil.",
+    "Août",
+    "Sept.",
+    "Oct.",
+    "Nov.",
+    "Déc.",
+  ],
+  dayNames: [
+    "Dimanche",
+    "Lundi",
+    "Mardi",
+    "Mercredi",
+    "Jeudi",
+    "Vendredi",
+    "Samedi",
+  ],
+  dayNamesShort: ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"],
   today: "Aujourd'hui",
 };
 LocaleConfig.defaultLocale = "fr";
 
 async function getOrCreateCalendarId(): Promise<string | null> {
-  const calendars = await ExpoCalendar.getCalendarsAsync(ExpoCalendar.EntityTypes.EVENT);
-  const defaultCal = calendars.find(
-    (c) => c.allowsModifications && c.source
+  const calendars = await ExpoCalendar.getCalendarsAsync(
+    ExpoCalendar.EntityTypes.EVENT,
   );
+  const defaultCal = calendars.find((c) => c.allowsModifications && c.source);
   if (defaultCal) return defaultCal.id;
 
   // Créer un calendrier si aucun n'est dispo
@@ -24,7 +63,10 @@ async function getOrCreateCalendarId(): Promise<string | null> {
     title: "Urban Explorer",
     color: "#2563eb",
     entityType: ExpoCalendar.EntityTypes.EVENT,
-    source: calendars[0]?.source || { name: "Urban Explorer", type: "LOCAL" as any },
+    source: calendars[0]?.source || {
+      name: "Urban Explorer",
+      type: "LOCAL" as any,
+    },
     name: "urbanexplorer",
     ownerAccount: "personal",
     accessLevel: ExpoCalendar.CalendarAccessLevel.OWNER,
@@ -33,96 +75,151 @@ async function getOrCreateCalendarId(): Promise<string | null> {
 }
 
 export default function PlaceDetailScreen({ route }: any) {
+  const { colors, isDarkMode } = useContext(ThemeContext);
   const { place } = route.params;
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [calendarPermission, setCalendarPermission] = useState(false);
 
+  // Charger la date sauvegardée pour ce lieu
   useEffect(() => {
-    (async () => {
-      const { status } = await ExpoCalendar.requestCalendarPermissionsAsync();
-      setCalendarPermission(status === "granted");
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission requise",
-          "L'accès au calendrier est nécessaire pour planifier vos visites."
-        );
+    AsyncStorage.getItem(VISITS_KEY).then((data) => {
+      if (data) {
+        const visits = JSON.parse(data);
+        if (visits[place.id]) setSelectedDate(visits[place.id]);
       }
-    })();
+    });
   }, []);
 
   const onDayPress = async (day: any) => {
     setSelectedDate(day.dateString);
 
-    if (!calendarPermission) {
-      Alert.alert("Permission refusée", "Impossible d'ajouter au calendrier sans permission.");
-      return;
-    }
-
+    // Sauvegarder la date en local dans tous les cas
     try {
-      const calendarId = await getOrCreateCalendarId();
-      if (!calendarId) {
-        Alert.alert("Erreur", "Aucun calendrier disponible sur cet appareil.");
-        return;
-      }
-
-      const startDate = new Date(day.dateString + "T10:00:00");
-      const endDate = new Date(day.dateString + "T18:00:00");
-
-      await ExpoCalendar.createEventAsync(calendarId, {
-        title: `Visite : ${place.title}`,
-        location: place.address,
-        startDate,
-        endDate,
-        notes: `Visite planifiée via Urban Explorer`,
-      });
-
-      Alert.alert(
-        "Visite planifiée ✅",
-        `Visite au "${place.title}" ajoutée à votre calendrier le ${day.dateString}`
-      );
-    } catch (error) {
-      console.log("Erreur calendrier :", error);
-      Alert.alert("Erreur", "Impossible d'ajouter l'événement au calendrier.");
+      const stored = await AsyncStorage.getItem(VISITS_KEY);
+      const visits = stored ? JSON.parse(stored) : {};
+      visits[place.id] = day.dateString;
+      await AsyncStorage.setItem(VISITS_KEY, JSON.stringify(visits));
+    } catch (e) {
+      console.log("Erreur sauvegarde locale :", e);
     }
+
+    // Tenter d'ajouter au calendrier natif
+    try {
+      const { status } = await ExpoCalendar.requestCalendarPermissionsAsync();
+      if (status === "granted") {
+        const calendarId = await getOrCreateCalendarId();
+        if (calendarId) {
+          const startDate = new Date(day.dateString + "T10:00:00");
+          const endDate = new Date(day.dateString + "T18:00:00");
+
+          await ExpoCalendar.createEventAsync(calendarId, {
+            title: `Visite : ${place.title}`,
+            location: place.address,
+            startDate,
+            endDate,
+            notes: `Visite planifiée via Urban Explorer`,
+          });
+
+          Alert.alert(
+            "Visite planifiée ✅",
+            `Visite au "${place.title}" ajoutée à votre calendrier le ${day.dateString}`,
+          );
+          return;
+        }
+      }
+    } catch (error) {
+      console.log("Calendrier natif non disponible :", error);
+    }
+
+    // Fallback : confirmation sans calendrier natif
+    Alert.alert(
+      "Visite planifiée ✅",
+      `Visite au "${place.title}" planifiée le ${day.dateString}`,
+    );
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Image source={{ uri: place.image }} style={styles.image} />
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <Image source={{ uri: place.image }} style={styles.image} />
 
-      <View style={styles.content}>
-        <Text style={styles.title}>{place.title}</Text>
-        <Text style={styles.address}>📍 {place.address}</Text>
-
-        {place.description ? (
-          <Text style={styles.description}>{place.description}</Text>
-        ) : null}
-
-        <Text style={styles.sectionTitle}>📅 Planifier une visite</Text>
-
-        <Calendar
-          onDayPress={onDayPress}
-          markedDates={
-            selectedDate
-              ? { [selectedDate]: { selected: true, selectedColor: "#2563eb" } }
-              : {}
-          }
-          theme={{
-            todayTextColor: "#2563eb",
-            arrowColor: "#2563eb",
-            selectedDayBackgroundColor: "#2563eb",
-          }}
-        />
-
-        {selectedDate && (
-          <View style={styles.confirmationBox}>
-            <Text style={styles.confirmationText}>
-              ✅ Visite au "{place.title}" planifiée le {selectedDate}
+        <View style={styles.content}>
+          <Text style={[styles.title, { color: colors.text }]}>
+            {place.title}
+          </Text>
+          <Text style={[styles.address, { color: colors.placeholder }]}>
+            📍 {place.address}
+          </Text>
+          {place.description ? (
+            <Text style={[styles.description, { color: colors.text }]}>
+              {place.description}
             </Text>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+          ) : null}
+
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            📅 Planifier une visite
+          </Text>
+
+          <Calendar
+            onDayPress={onDayPress}
+            markedDates={
+              selectedDate
+                ? {
+                    [selectedDate]: {
+                      selected: true,
+                      selectedColor: "#2563eb",
+                    },
+                  }
+                : {}
+            }
+            theme={
+              {
+                backgroundColor: colors.card,
+                calendarBackground: colors.card,
+
+                textSectionTitleColor: colors.placeholder,
+                dayTextColor: colors.text,
+                monthTextColor: colors.text,
+
+                todayTextColor: "#2563eb",
+                arrowColor: "#2563eb",
+
+                selectedDayBackgroundColor: "#2563eb",
+                selectedDayTextColor: "#ffffff",
+
+                textDisabledColor: "#555",
+
+                /** correction dark mode */
+                "stylesheet.calendar.main": {
+                  container: {
+                    backgroundColor: colors.card,
+                  },
+                },
+              } as any
+            }
+          />
+
+          {selectedDate && (
+            <View
+              style={[
+                styles.confirmationBox,
+                { backgroundColor: isDarkMode ? "#1f3d2b" : "#dcfce7" },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.confirmationText,
+                  { color: isDarkMode ? "#86efac" : "#166534" },
+                ]}
+              >
+                ✅ Visite au "{place.title}" planifiée le {selectedDate}
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -170,7 +267,6 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   confirmationText: {
-    color: "#166534",
     fontSize: 14,
     fontWeight: "600",
   },

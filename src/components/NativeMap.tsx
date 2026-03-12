@@ -18,11 +18,12 @@ type Props = {
     latitudeDelta: number;
     longitudeDelta: number;
   };
+  userLocation?: { latitude: number; longitude: number } | null;
 };
 
-export default function NativeMap({ places, region }: Props) {
+export default function NativeMap({ places, region, userLocation }: Props) {
   return (
-    <MapView style={styles.map} initialRegion={region}>
+    <MapView style={styles.map} initialRegion={region} showsUserLocation={!!userLocation}>
       {places.map((place) => (
         <Marker
           key={place.id}
