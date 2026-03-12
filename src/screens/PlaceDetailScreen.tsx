@@ -1,8 +1,9 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { View, Text, StyleSheet, Image, ScrollView, Alert } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../context/ThemeContext";
+import * as ExpoCalendar from "expo-calendar";
 
 LocaleConfig.locales["fr"] = {
   monthNames: [
@@ -47,17 +48,85 @@ LocaleConfig.locales["fr"] = {
 };
 LocaleConfig.defaultLocale = "fr";
 
+async function getOrCreateCalendarId(): Promise<string | null> {
+  const calendars = await ExpoCalendar.getCalendarsAsync(
+    ExpoCalendar.EntityTypes.EVENT,
+  );
+  const defaultCal = calendars.find((c) => c.allowsModifications && c.source);
+  if (defaultCal) return defaultCal.id;
+
+  // Créer un calendrier si aucun n'est dispo
+  const newCalId = await ExpoCalendar.createCalendarAsync({
+    title: "Urban Explorer",
+    color: "#2563eb",
+    entityType: ExpoCalendar.EntityTypes.EVENT,
+    source: calendars[0]?.source || {
+      name: "Urban Explorer",
+      type: "LOCAL" as any,
+    },
+    name: "urbanexplorer",
+    ownerAccount: "personal",
+    accessLevel: ExpoCalendar.CalendarAccessLevel.OWNER,
+  });
+  return newCalId;
+}
+
 export default function PlaceDetailScreen({ route }: any) {
   const { colors, isDarkMode } = useContext(ThemeContext);
   const { place } = route.params;
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [calendarPermission, setCalendarPermission] = useState(false);
 
-  const onDayPress = (day: any) => {
+  useEffect(() => {
+    (async () => {
+      const { status } = await ExpoCalendar.requestCalendarPermissionsAsync();
+      setCalendarPermission(status === "granted");
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission requise",
+          "L'accès au calendrier est nécessaire pour planifier vos visites.",
+        );
+      }
+    })();
+  }, []);
+
+  const onDayPress = async (day: any) => {
     setSelectedDate(day.dateString);
-    Alert.alert(
-      "Visite planifiée ✅",
-      `Visite au "${place.title}" planifiée le ${day.dateString}`,
-    );
+
+    if (!calendarPermission) {
+      Alert.alert(
+        "Permission refusée",
+        "Impossible d'ajouter au calendrier sans permission.",
+      );
+      return;
+    }
+
+    try {
+      const calendarId = await getOrCreateCalendarId();
+      if (!calendarId) {
+        Alert.alert("Erreur", "Aucun calendrier disponible sur cet appareil.");
+        return;
+      }
+
+      const startDate = new Date(day.dateString + "T10:00:00");
+      const endDate = new Date(day.dateString + "T18:00:00");
+
+      await ExpoCalendar.createEventAsync(calendarId, {
+        title: `Visite : ${place.title}`,
+        location: place.address,
+        startDate,
+        endDate,
+        notes: `Visite planifiée via Urban Explorer`,
+      });
+
+      Alert.alert(
+        "Visite planifiée ✅",
+        `Visite au "${place.title}" ajoutée à votre calendrier le ${day.dateString}`,
+      );
+    } catch (error) {
+      console.log("Erreur calendrier :", error);
+      Alert.alert("Erreur", "Impossible d'ajouter l'événement au calendrier.");
+    }
   };
 
   return (

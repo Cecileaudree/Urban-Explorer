@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useContext } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
-import MapView, { Marker } from "react-native-maps";
 import { fetchPlaces, Place } from "../services/api";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../context/ThemeContext";
+import NativeMap from "../components/NativeMap";
 
 const PARIS_REGION = {
   latitude: 48.8566,
@@ -37,23 +37,9 @@ export default function MapScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <MapView style={styles.map} initialRegion={PARIS_REGION}>
-          {places.map((place) => (
-            <Marker
-              key={place.id}
-              coordinate={{
-                latitude: place.lat,
-                longitude: place.lon,
-              }}
-              title={place.title}
-              description={place.address}
-            />
-          ))}
-        </MapView>
-      </View>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <NativeMap places={places} region={PARIS_REGION} />
+    </View>
   );
 }
 
@@ -61,11 +47,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
-  map: {
-    flex: 1,
-  },
-
   center: {
     flex: 1,
     justifyContent: "center",
