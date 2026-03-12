@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,11 @@ import {
 } from "react-native";
 import { fetchPlaces, Place } from "../services/api";
 import LieuCard from "../components/LieuCard";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemeContext } from "../context/ThemeContext";
 
 export default function DiscoverScreen({ navigation }: any) {
+  const { colors } = useContext(ThemeContext);
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,14 +27,16 @@ export default function DiscoverScreen({ navigation }: any) {
   }, []);
 
   const filtered = places.filter((p) =>
-    p.title.toLowerCase().includes(search.toLowerCase())
+    p.title.toLowerCase().includes(search.toLowerCase()),
   );
 
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={{ marginTop: 10 }}>Chargement des lieux...</Text>
+        <Text style={[{ marginTop: 10 }, { color: colors.text }]}>
+          Chargement des lieux...
+        </Text>
       </View>
     );
   }
@@ -45,37 +50,51 @@ export default function DiscoverScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.searchBar}
-        placeholder="🔍 Rechercher un lieu..."
-        value={search}
-        onChangeText={setSearch}
-      />
-      <FlatList
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <LieuCard
-            place={item}
-            onPress={() => navigation.navigate("PlaceDetail", { place: item })}
-          />
-        )}
-        ListEmptyComponent={
-          <Text style={styles.empty}>Aucun lieu trouvé.</Text>
-        }
-      />
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <TextInput
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.border,
+              color: colors.text,
+            },
+          ]}
+          placeholder="🔍 Rechercher un lieu..."
+          placeholderTextColor={colors.placeholder}
+          value={search}
+          onChangeText={setSearch}
+        />
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <LieuCard
+              place={item}
+              onPress={() =>
+                navigation.navigate("PlaceDetail", { place: item })
+              }
+            />
+          )}
+          ListEmptyComponent={
+            <Text style={[styles.empty, { color: colors.text }]}>
+              Aucun lieu trouvé.
+            </Text>
+          }
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 15,
     backgroundColor: "#f4f6f8",
   },
   searchBar: {
+    borderWidth: 1,
     backgroundColor: "white",
     borderRadius: 10,
     paddingHorizontal: 15,

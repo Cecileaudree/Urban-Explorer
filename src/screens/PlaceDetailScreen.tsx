@@ -1,17 +1,54 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { View, Text, StyleSheet, Image, ScrollView, Alert } from "react-native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ThemeContext } from "../context/ThemeContext";
 
 LocaleConfig.locales["fr"] = {
-  monthNames: ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"],
-  monthNamesShort: ["Janv.","Févr.","Mars","Avr.","Mai","Juin","Juil.","Août","Sept.","Oct.","Nov.","Déc."],
-  dayNames: ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"],
-  dayNamesShort: ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"],
+  monthNames: [
+    "Janvier",
+    "Février",
+    "Mars",
+    "Avril",
+    "Mai",
+    "Juin",
+    "Juillet",
+    "Août",
+    "Septembre",
+    "Octobre",
+    "Novembre",
+    "Décembre",
+  ],
+  monthNamesShort: [
+    "Janv.",
+    "Févr.",
+    "Mars",
+    "Avr.",
+    "Mai",
+    "Juin",
+    "Juil.",
+    "Août",
+    "Sept.",
+    "Oct.",
+    "Nov.",
+    "Déc.",
+  ],
+  dayNames: [
+    "Dimanche",
+    "Lundi",
+    "Mardi",
+    "Mercredi",
+    "Jeudi",
+    "Vendredi",
+    "Samedi",
+  ],
+  dayNamesShort: ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"],
   today: "Aujourd'hui",
 };
 LocaleConfig.defaultLocale = "fr";
 
 export default function PlaceDetailScreen({ route }: any) {
+  const { colors, isDarkMode } = useContext(ThemeContext);
   const { place } = route.params;
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -19,47 +56,93 @@ export default function PlaceDetailScreen({ route }: any) {
     setSelectedDate(day.dateString);
     Alert.alert(
       "Visite planifiée ✅",
-      `Visite au "${place.title}" planifiée le ${day.dateString}`
+      `Visite au "${place.title}" planifiée le ${day.dateString}`,
     );
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Image source={{ uri: place.image }} style={styles.image} />
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <Image source={{ uri: place.image }} style={styles.image} />
 
-      <View style={styles.content}>
-        <Text style={styles.title}>{place.title}</Text>
-        <Text style={styles.address}>📍 {place.address}</Text>
-
-        {place.description ? (
-          <Text style={styles.description}>{place.description}</Text>
-        ) : null}
-
-        <Text style={styles.sectionTitle}>📅 Planifier une visite</Text>
-
-        <Calendar
-          onDayPress={onDayPress}
-          markedDates={
-            selectedDate
-              ? { [selectedDate]: { selected: true, selectedColor: "#2563eb" } }
-              : {}
-          }
-          theme={{
-            todayTextColor: "#2563eb",
-            arrowColor: "#2563eb",
-            selectedDayBackgroundColor: "#2563eb",
-          }}
-        />
-
-        {selectedDate && (
-          <View style={styles.confirmationBox}>
-            <Text style={styles.confirmationText}>
-              ✅ Visite au "{place.title}" planifiée le {selectedDate}
+        <View style={styles.content}>
+          <Text style={[styles.title, { color: colors.text }]}>
+            {place.title}
+          </Text>
+          <Text style={[styles.address, { color: colors.placeholder }]}>
+            📍 {place.address}
+          </Text>
+          {place.description ? (
+            <Text style={[styles.description, { color: colors.text }]}>
+              {place.description}
             </Text>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+          ) : null}
+
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            📅 Planifier une visite
+          </Text>
+
+          <Calendar
+            onDayPress={onDayPress}
+            markedDates={
+              selectedDate
+                ? {
+                    [selectedDate]: {
+                      selected: true,
+                      selectedColor: "#2563eb",
+                    },
+                  }
+                : {}
+            }
+            theme={
+              {
+                backgroundColor: colors.card,
+                calendarBackground: colors.card,
+
+                textSectionTitleColor: colors.placeholder,
+                dayTextColor: colors.text,
+                monthTextColor: colors.text,
+
+                todayTextColor: "#2563eb",
+                arrowColor: "#2563eb",
+
+                selectedDayBackgroundColor: "#2563eb",
+                selectedDayTextColor: "#ffffff",
+
+                textDisabledColor: "#555",
+
+                /** correction dark mode */
+                "stylesheet.calendar.main": {
+                  container: {
+                    backgroundColor: colors.card,
+                  },
+                },
+              } as any
+            }
+          />
+
+          {selectedDate && (
+            <View
+              style={[
+                styles.confirmationBox,
+                { backgroundColor: isDarkMode ? "#1f3d2b" : "#dcfce7" },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.confirmationText,
+                  { color: isDarkMode ? "#86efac" : "#166534" },
+                ]}
+              >
+                ✅ Visite au "{place.title}" planifiée le {selectedDate}
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -107,7 +190,6 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   confirmationText: {
-    color: "#166534",
     fontSize: 14,
     fontWeight: "600",
   },
