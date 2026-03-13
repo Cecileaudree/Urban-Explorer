@@ -23,7 +23,7 @@ Urban Explorer adopte une **architecture modulaire** et **séparée par responsa
 - **Screens** : Composants de haut niveau gérant la logique métier, les permissions et les états (`DiscoverScreen.tsx`, `PlaceDetailScreen.tsx`, `ProfileScreen.tsx`).  
 - **Components** : Éléments d’interface réutilisables (cartes de lieux, listes, carte abstraite).  
 - **Types & Services** :  
-  - Interfaces TypeScript pour la navigation  
+  - Interfaces TypeScript   
   - Service API via **Axios** pour récupérer et normaliser les données
 
 ---
@@ -76,7 +76,11 @@ L’application consomme l’**API Open Data Paris** ("Que faire à Paris").
 
 - **Recherche en temps réel** : Filtrage dynamique des lieux dans l’écran de découverte  
 - **Localisation** : Calendrier en français via `react-native-calendars`  
-- **Typage TypeScript** : Sécurisation complète des routes et paramètres de navigation  
+- **Typage TypeScript** : Sécurisation complète des routes et paramètres de navigation
+- **Dark Mode** : Gestion globale du thème via un `contexte React`
+- **Scroll Infini** : Chargement de nouveaux lieux en scrollant
+- **Animations** : Animation progressives des cartes de lieux, transition animée entre la liste et la page détail.
+- **Actualisation des données** : Rechargement automatique des données de l'API.
 - **UI/UX Polie** :  
   - Cartes avec ombres et arrondis  
   - Retours visuels après chaque action réussie (ajout calendrier, mise à jour photo)  
