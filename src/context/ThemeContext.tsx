@@ -14,7 +14,7 @@ const darkTheme = {
   text: "#FFFFFF",
   input: "#2A2A3D",
   placeholder: "#aaa",
-  border: "#E5E7EB",
+  border: "#FFFFFF",
 };
 
 interface ThemeContextType {
