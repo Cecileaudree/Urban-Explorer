@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useContext } from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { Place } from "../services/api";
+import { ThemeContext } from "../context/ThemeContext";
 
 type Props = {
   place: Place;
@@ -8,14 +9,24 @@ type Props = {
 };
 
 export default function LieuCard({ place, onPress }: Props) {
+  const { colors } = useContext(ThemeContext);
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
+    <TouchableOpacity
+      style={[
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
+      onPress={onPress}
+    >
       <Image source={{ uri: place.image }} style={styles.image} />
       <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={2}>
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
           {place.title}
         </Text>
-        <Text style={styles.address} numberOfLines={1}>
+        <Text
+          style={[styles.address, { color: colors.placeholder }]}
+          numberOfLines={1}
+        >
           📍 {place.address}
         </Text>
         <TouchableOpacity style={styles.button} onPress={onPress}>
@@ -28,15 +39,14 @@ export default function LieuCard({ place, onPress }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "white",
     borderRadius: 12,
     marginBottom: 15,
     overflow: "hidden",
     elevation: 3,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    borderWidth: 1,
   },
   image: {
     width: "100%",

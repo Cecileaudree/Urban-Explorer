@@ -125,15 +125,18 @@ export default function DiscoverScreen({ navigation }: any) {
           onChangeText={setSearch}
         />
         <FlatList
+          // contentContainerStyle={{ paddingBottom: 10 }}
           data={filtered}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <LieuCard
-              place={item}
-              onPress={() =>
-                navigation.navigate("PlaceDetail", { place: item })
-              }
-            />
+            <Animated.View style={{ opacity: fade }}>
+              <LieuCard
+                place={item}
+                onPress={() =>
+                  navigation.navigate("PlaceDetail", { place: item })
+                }
+              />
+            </Animated.View>
           )}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
@@ -158,7 +161,8 @@ export default function DiscoverScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15,
+    paddingHorizontal: 15,
+    paddingTop: 15,
     backgroundColor: "#f4f6f8",
   },
   searchBar: {
