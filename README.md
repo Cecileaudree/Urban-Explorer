@@ -34,7 +34,7 @@ L’application consomme l’**API Open Data Paris** ("Que faire à Paris").
 
 ### **Gestion des Requêtes**
 
-- **Récupération** : Les 30 premiers lieux sont récupérés via **Axios**.  
+- **Récupération** : Les 30 premiers lieux sont récupérés via **Axios**. Lorsque l’utilisateur fait défiler la liste, de nouveaux résultats sont chargés automatiquement grâce à un **scroll infini**.
 - **Nettoyage des données** :
   - Exclusion des lieux sans coordonnées valides  
   - Images de secours générées via **Picsum Photos** si aucune image fournie  
