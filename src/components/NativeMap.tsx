@@ -23,7 +23,11 @@ type Props = {
 
 export default function NativeMap({ places, region, userLocation }: Props) {
   return (
-    <MapView style={styles.map} initialRegion={region} showsUserLocation={!!userLocation}>
+    <MapView
+      style={styles.map}
+      initialRegion={region}
+      showsUserLocation={!!userLocation}
+    >
       {places.map((place) => (
         <Marker
           key={place.id}
