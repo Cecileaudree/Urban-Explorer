@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -12,17 +12,27 @@ import { fetchPlaces, Place } from "../services/api";
 import LieuCard from "../components/LieuCard";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../context/ThemeContext";
+import { Animated } from "react-native";
 
 export default function DiscoverScreen({ navigation }: any) {
+  const fade = useRef(new Animated.Value(0)).current;
   const { colors } = useContext(ThemeContext);
-  const [page, setPage] = useState(0);
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    Animated.timing(fade, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const loadPlaces = async (pageNumber = 0) => {
     try {
@@ -34,7 +44,13 @@ export default function DiscoverScreen({ navigation }: any) {
       }
 
       if (pageNumber === 0) {
+        fade.setValue(0);
         setPlaces(newPlaces);
+        Animated.timing(fade, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }).start();
       } else {
         setPlaces((prev) => [...prev, ...newPlaces]);
       }

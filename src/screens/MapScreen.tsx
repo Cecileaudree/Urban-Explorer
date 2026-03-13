@@ -19,7 +19,10 @@ export default function MapScreen() {
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(true);
   const [region, setRegion] = useState(PARIS_REGION);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   useEffect(() => {
     // Charger les lieux
@@ -59,9 +62,15 @@ export default function MapScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <NativeMap places={places} region={region} userLocation={userLocation} />
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <NativeMap
+          places={places}
+          region={region}
+          userLocation={userLocation}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 

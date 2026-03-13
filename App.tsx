@@ -27,7 +27,11 @@ const Stack = createNativeStackNavigator<DiscoverStackParamList>();
 
 function DiscoverStackNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        animation: "slide_from_right",
+      }}
+    >
       <Stack.Screen
         name="Discover"
         component={DiscoverScreen}
